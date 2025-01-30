@@ -12,6 +12,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f4f4f4; }
+        .editable { cursor: pointer; background-color: #f9f9f9; }
         .total-row { font-weight: bold; background-color: #eef; }
     </style>
 </head>
@@ -53,7 +54,7 @@
         <tbody id="recordListChongqing"></tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="3">總累積金額</td>
+                <td colspan="3">整間店累積金額</td>
                 <td id="totalChongqing">0</td>
             </tr>
         </tfoot>
@@ -73,7 +74,7 @@
         <tbody id="recordListSanchong"></tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="3">總累積金額</td>
+                <td colspan="3">整間店累積金額</td>
                 <td id="totalSanchong">0</td>
             </tr>
         </tfoot>
@@ -145,7 +146,7 @@
                 let totalMap = {};
                 let totalStoreSum = 0;
 
-                records.forEach(record => {
+                records.forEach((record, index) => {
                     let machine = record.machine;
                     let amount = parseFloat(record.amount) || 0;
 
@@ -154,14 +155,12 @@
                     }
                     totalMap[machine] += amount;
                     totalStoreSum += amount;
-                });
 
-                records.forEach(record => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
                         <td>${record.date}</td>
                         <td>${record.machine}</td>
-                        <td>${record.amount}</td>
+                        <td contenteditable="true" class="editable" onblur="updateAmount('${store}', ${index}, this)">${record.amount}</td>
                         <td>${totalMap[record.machine]}</td>
                     `;
                     recordList.appendChild(row);
@@ -171,24 +170,16 @@
             });
         }
 
-        function clearRecords(store) {
-            localStorage.removeItem(store);
+        function updateAmount(store, index, element) {
+            let records = JSON.parse(localStorage.getItem(store)) || [];
+            records[index].amount = parseFloat(element.textContent) || 0;
+            localStorage.setItem(store, JSON.stringify(records));
             loadRecords();
         }
 
-        function exportToExcel() {
-            let wb = XLSX.utils.book_new();
-
-            ["重慶店", "三重店"].forEach(store => {
-                let records = JSON.parse(localStorage.getItem(store)) || [];
-                if (records.length > 0) {
-                    let ws = XLSX.utils.json_to_sheet(records, { header: ["date", "machine", "amount"] });
-                    XLSX.utils.sheet_add_aoa(ws, [["日期", "台號", "金額"]], { origin: "A1" });
-                    XLSX.utils.book_append_sheet(wb, ws, store);
-                }
-            });
-
-            XLSX.writeFile(wb, "bookkeeping.xlsx");
+        function clearRecords(store) {
+            localStorage.removeItem(store);
+            loadRecords();
         }
 
         window.onload = () => {
