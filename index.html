@@ -12,6 +12,8 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f4f4f4; }
+        .editable { cursor: pointer; background-color: #f9f9f9; }
+        .total-row { font-weight: bold; background-color: #eef; }
     </style>
 </head>
 <body>
@@ -30,6 +32,9 @@
         <option value="">請先選擇店名</option>
     </select>
 
+    <label for="date">選擇日期：</label>
+    <input type="date" id="date">
+
     <label for="amount">輸入金額：</label>
     <input type="number" id="amount" placeholder="輸入金額">
 
@@ -41,12 +46,18 @@
     <table>
         <thead>
             <tr>
+                <th>日期</th>
                 <th>台號</th>
                 <th>金額</th>
-                <th>時間</th>
             </tr>
         </thead>
         <tbody id="recordListChongqing"></tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">總計</td>
+                <td id="totalChongqing">0</td>
+            </tr>
+        </tfoot>
     </table>
 
     <h3>三重店 記錄列表</h3>
@@ -54,12 +65,18 @@
     <table>
         <thead>
             <tr>
+                <th>日期</th>
                 <th>台號</th>
                 <th>金額</th>
-                <th>時間</th>
             </tr>
         </thead>
         <tbody id="recordListSanchong"></tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">總計</td>
+                <td id="totalSanchong">0</td>
+            </tr>
+        </tfoot>
     </table>
 
     <script>
@@ -95,16 +112,15 @@
             const store = document.getElementById("store").value;
             const machine = document.getElementById("machine").value;
             const amount = document.getElementById("amount").value;
-            if (!store || !machine || !amount) {
+            const date = document.getElementById("date").value;
+
+            if (!store || !machine || !amount || !date) {
                 alert("請填寫完整資料");
                 return;
             }
 
-            const now = new Date();
-            const timeString = now.toLocaleString();
-
             let records = JSON.parse(localStorage.getItem(store)) || [];
-            records.push({ machine, amount, timeString });
+            records.push({ date, machine, amount });
             localStorage.setItem(store, JSON.stringify(records));
 
             document.getElementById("amount").value = "";
@@ -114,15 +130,32 @@
         function loadRecords() {
             ["重慶店", "三重店"].forEach(store => {
                 const recordList = document.getElementById(store === "重慶店" ? "recordListChongqing" : "recordListSanchong");
+                const totalField = document.getElementById(store === "重慶店" ? "totalChongqing" : "totalSanchong");
                 recordList.innerHTML = "";
 
                 let records = JSON.parse(localStorage.getItem(store)) || [];
-                records.forEach(({ machine, amount, timeString }) => {
+                let total = 0;
+
+                records.forEach((record, index) => {
                     const row = document.createElement("tr");
-                    row.innerHTML = `<td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
+                    row.innerHTML = `
+                        <td>${record.date}</td>
+                        <td>${record.machine}</td>
+                        <td contenteditable="true" class="editable" onblur="updateAmount('${store}', ${index}, this)">${record.amount}</td>
+                    `;
                     recordList.appendChild(row);
+                    total += parseFloat(record.amount);
                 });
+
+                totalField.textContent = total;
             });
+        }
+
+        function updateAmount(store, index, element) {
+            let records = JSON.parse(localStorage.getItem(store)) || [];
+            records[index].amount = element.textContent;
+            localStorage.setItem(store, JSON.stringify(records));
+            loadRecords();
         }
 
         function clearRecords(store) {
@@ -131,26 +164,16 @@
         }
 
         function exportToExcel() {
-            let chongqingRecords = JSON.parse(localStorage.getItem("重慶店")) || [];
-            let sanchongRecords = JSON.parse(localStorage.getItem("三重店")) || [];
-            if (chongqingRecords.length === 0 && sanchongRecords.length === 0) {
-                alert("沒有記錄可匯出！");
-                return;
-            }
-
             let wb = XLSX.utils.book_new();
 
-            if (chongqingRecords.length > 0) {
-                let ws1 = XLSX.utils.json_to_sheet(chongqingRecords, { header: ["machine", "amount", "timeString"] });
-                XLSX.utils.sheet_add_aoa(ws1, [["台號", "金額", "時間"]], { origin: "A1" });
-                XLSX.utils.book_append_sheet(wb, ws1, "重慶店");
-            }
-
-            if (sanchongRecords.length > 0) {
-                let ws2 = XLSX.utils.json_to_sheet(sanchongRecords, { header: ["machine", "amount", "timeString"] });
-                XLSX.utils.sheet_add_aoa(ws2, [["台號", "金額", "時間"]], { origin: "A1" });
-                XLSX.utils.book_append_sheet(wb, ws2, "三重店");
-            }
+            ["重慶店", "三重店"].forEach(store => {
+                let records = JSON.parse(localStorage.getItem(store)) || [];
+                if (records.length > 0) {
+                    let ws = XLSX.utils.json_to_sheet(records, { header: ["date", "machine", "amount"] });
+                    XLSX.utils.sheet_add_aoa(ws, [["日期", "台號", "金額"]], { origin: "A1" });
+                    XLSX.utils.book_append_sheet(wb, ws, store);
+                }
+            });
 
             XLSX.writeFile(wb, "bookkeeping.xlsx");
         }
