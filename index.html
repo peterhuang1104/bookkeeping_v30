@@ -22,9 +22,8 @@
 
     <label for="store">選擇店名：</label>
     <select id="store" onchange="updateMachineOptions()">
-        <option value="">請選擇店名</option>
+        <option value="三重店" selected>三重店</option>
         <option value="重慶店">重慶店</option>
-        <option value="三重店">三重店</option>
     </select>
 
     <label for="machine">選擇台號：</label>
@@ -54,7 +53,7 @@
         <tbody id="recordListChongqing"></tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="2">總計</td>
+                <td colspan="2">目前累積金額</td>
                 <td id="totalChongqing">0</td>
             </tr>
         </tfoot>
@@ -73,7 +72,7 @@
         <tbody id="recordListSanchong"></tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="2">總計</td>
+                <td colspan="2">目前累積金額</td>
                 <td id="totalSanchong">0</td>
             </tr>
         </tfoot>
@@ -108,13 +107,23 @@
             }
         }
 
+        function getTodayDate() {
+            const today = new Date();
+            return today.toISOString().split("T")[0];
+        }
+
         function recordTransaction() {
             const store = document.getElementById("store").value;
             const machine = document.getElementById("machine").value;
             const amount = document.getElementById("amount").value;
-            const date = document.getElementById("date").value;
+            let date = document.getElementById("date").value;
 
-            if (!store || !machine || !amount || !date) {
+            if (!date) {
+                date = getTodayDate();
+                document.getElementById("date").value = date;
+            }
+
+            if (!store || !machine || !amount) {
                 alert("請填寫完整資料");
                 return;
             }
@@ -136,12 +145,12 @@
                 let records = JSON.parse(localStorage.getItem(store)) || [];
                 let total = 0;
 
-                records.forEach((record, index) => {
+                records.forEach(record => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
                         <td>${record.date}</td>
                         <td>${record.machine}</td>
-                        <td contenteditable="true" class="editable" onblur="updateAmount('${store}', ${index}, this)">${record.amount}</td>
+                        <td>${record.amount}</td>
                     `;
                     recordList.appendChild(row);
                     total += parseFloat(record.amount);
@@ -149,13 +158,6 @@
 
                 totalField.textContent = total;
             });
-        }
-
-        function updateAmount(store, index, element) {
-            let records = JSON.parse(localStorage.getItem(store)) || [];
-            records[index].amount = element.textContent;
-            localStorage.setItem(store, JSON.stringify(records));
-            loadRecords();
         }
 
         function clearRecords(store) {
@@ -178,7 +180,10 @@
             XLSX.writeFile(wb, "bookkeeping.xlsx");
         }
 
-        window.onload = loadRecords;
+        window.onload = () => {
+            document.getElementById("date").value = getTodayDate();
+            loadRecords();
+        };
     </script>
 
 </body>
