@@ -33,6 +33,7 @@
     <input type="number" id="amount" placeholder="輸入金額">
 
     <button onclick="recordTransaction()">記錄</button>
+    <button onclick="clearRecords()">清除所有記錄</button>
 
     <h3>記錄列表</h3>
     <table>
@@ -48,7 +49,6 @@
     </table>
 
     <script>
-        // 店名與對應台號
         const machines = {
             "店A": ["A-01", "A-02", "A-03"],
             "店B": ["B-01", "B-02", "B-03"],
@@ -58,9 +58,7 @@
         function updateMachineOptions() {
             const store = document.getElementById("store").value;
             const machineSelect = document.getElementById("machine");
-            
             machineSelect.innerHTML = '<option value="">請選擇台號</option>';
-
             if (store && machines[store]) {
                 machines[store].forEach(machine => {
                     const option = document.createElement("option");
@@ -75,8 +73,6 @@
             const store = document.getElementById("store").value;
             const machine = document.getElementById("machine").value;
             const amount = document.getElementById("amount").value;
-            const recordList = document.getElementById("recordList");
-
             if (!store || !machine || !amount) {
                 alert("請填寫完整資料");
                 return;
@@ -85,19 +81,35 @@
             const now = new Date();
             const timeString = now.toLocaleString();
 
+            const recordList = document.getElementById("recordList");
             const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${store}</td>
-                <td>${machine}</td>
-                <td>${amount}</td>
-                <td>${timeString}</td>
-            `;
-
+            row.innerHTML = `<td>${store}</td><td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
             recordList.appendChild(row);
 
-            // 清空輸入
+            // 儲存到 LocalStorage
+            let records = JSON.parse(localStorage.getItem("records")) || [];
+            records.push({ store, machine, amount, timeString });
+            localStorage.setItem("records", JSON.stringify(records));
+
             document.getElementById("amount").value = "";
         }
+
+        function loadRecords() {
+            const recordList = document.getElementById("recordList");
+            const records = JSON.parse(localStorage.getItem("records")) || [];
+            records.forEach(({ store, machine, amount, timeString }) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${store}</td><td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
+                recordList.appendChild(row);
+            });
+        }
+
+        function clearRecords() {
+            localStorage.removeItem("records");
+            document.getElementById("recordList").innerHTML = "";
+        }
+
+        window.onload = loadRecords;
     </script>
 
 </body>
