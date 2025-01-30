@@ -12,7 +12,6 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f4f4f4; }
-        .editable { cursor: pointer; background-color: #f9f9f9; }
         .total-row { font-weight: bold; background-color: #eef; }
     </style>
 </head>
@@ -48,15 +47,10 @@
                 <th>日期</th>
                 <th>台號</th>
                 <th>金額</th>
+                <th>目前累積金額</th>
             </tr>
         </thead>
         <tbody id="recordListChongqing"></tbody>
-        <tfoot>
-            <tr class="total-row">
-                <td colspan="2">目前累積金額</td>
-                <td id="totalChongqing">0</td>
-            </tr>
-        </tfoot>
     </table>
 
     <h3>三重店 記錄列表</h3>
@@ -67,22 +61,19 @@
                 <th>日期</th>
                 <th>台號</th>
                 <th>金額</th>
+                <th>目前累積金額</th>
             </tr>
         </thead>
         <tbody id="recordListSanchong"></tbody>
-        <tfoot>
-            <tr class="total-row">
-                <td colspan="2">目前累積金額</td>
-                <td id="totalSanchong">0</td>
-            </tr>
-        </tfoot>
     </table>
 
     <script>
         function updateMachineOptions() {
             const store = document.getElementById("store").value;
             const machineSelect = document.getElementById("machine");
-            machineSelect.innerHTML = '<option value="">請選擇台號</option>';
+            machineSelect.innerHTML = "";
+
+            let firstMachine = "1"; // 預設選擇第一台
 
             if (store === "重慶店") {
                 for (let i = 1; i <= 27; i += 2) {
@@ -105,6 +96,8 @@
                     machineSelect.appendChild(option);
                 });
             }
+
+            machineSelect.value = firstMachine;
         }
 
         function getTodayDate() {
@@ -139,11 +132,20 @@
         function loadRecords() {
             ["重慶店", "三重店"].forEach(store => {
                 const recordList = document.getElementById(store === "重慶店" ? "recordListChongqing" : "recordListSanchong");
-                const totalField = document.getElementById(store === "重慶店" ? "totalChongqing" : "totalSanchong");
                 recordList.innerHTML = "";
 
                 let records = JSON.parse(localStorage.getItem(store)) || [];
-                let total = 0;
+                let totalMap = {};
+
+                records.forEach(record => {
+                    let machine = record.machine;
+                    let amount = parseFloat(record.amount) || 0;
+
+                    if (!totalMap[machine]) {
+                        totalMap[machine] = 0;
+                    }
+                    totalMap[machine] += amount;
+                });
 
                 records.forEach(record => {
                     const row = document.createElement("tr");
@@ -151,12 +153,10 @@
                         <td>${record.date}</td>
                         <td>${record.machine}</td>
                         <td>${record.amount}</td>
+                        <td>${totalMap[record.machine]}</td>
                     `;
                     recordList.appendChild(row);
-                    total += parseFloat(record.amount);
                 });
-
-                totalField.textContent = total;
             });
         }
 
@@ -182,6 +182,7 @@
 
         window.onload = () => {
             document.getElementById("date").value = getTodayDate();
+            updateMachineOptions(); // 預設台號
             loadRecords();
         };
     </script>
