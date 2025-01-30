@@ -37,40 +37,50 @@
     <button onclick="exportToExcel()">匯出 Excel</button>
     <button onclick="clearRecords()">清除所有記錄</button>
 
-    <h3>記錄列表</h3>
+    <h3>重慶店 記錄列表</h3>
     <table>
         <thead>
             <tr>
-                <th>店名</th>
                 <th>台號</th>
                 <th>金額</th>
                 <th>時間</th>
             </tr>
         </thead>
-        <tbody id="recordList"></tbody>
+        <tbody id="recordListChongqing"></tbody>
+    </table>
+
+    <h3>三重店 記錄列表</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>台號</th>
+                <th>金額</th>
+                <th>時間</th>
+            </tr>
+        </thead>
+        <tbody id="recordListSanchong"></tbody>
     </table>
 
     <script>
         function updateMachineOptions() {
             const store = document.getElementById("store").value;
             const machineSelect = document.getElementById("machine");
-            machineSelect.innerHTML = '<option value="">請選擇台號</option>'; // 清空選項
+            machineSelect.innerHTML = '<option value="">請選擇台號</option>'; 
 
             if (store === "重慶店") {
-                for (let i = 1; i <= 27; i += 2) { // 1, 3, 5, ..., 27
+                for (let i = 1; i <= 27; i += 2) { 
                     let option = document.createElement("option");
                     option.value = i;
                     option.textContent = i;
                     machineSelect.appendChild(option);
                 }
             } else if (store === "三重店") {
-                for (let i = 1; i <= 25; i++) { // 1 到 25
+                for (let i = 1; i <= 25; i++) { 
                     let option = document.createElement("option");
                     option.value = i;
                     option.textContent = i;
                     machineSelect.appendChild(option);
                 }
-                // 加入 巨1, 巨2
                 ["巨1", "巨2"].forEach(machine => {
                     let option = document.createElement("option");
                     option.value = machine;
@@ -92,32 +102,37 @@
             const now = new Date();
             const timeString = now.toLocaleString();
 
-            const recordList = document.getElementById("recordList");
-            const row = document.createElement("tr");
-            row.innerHTML = `<td>${store}</td><td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
-            recordList.appendChild(row);
-
-            // 儲存到 LocalStorage
             let records = JSON.parse(localStorage.getItem("records")) || [];
             records.push({ store, machine, amount, timeString });
             localStorage.setItem("records", JSON.stringify(records));
 
             document.getElementById("amount").value = "";
+            loadRecords();
         }
 
         function loadRecords() {
-            const recordList = document.getElementById("recordList");
             const records = JSON.parse(localStorage.getItem("records")) || [];
+
+            // 清空表格
+            document.getElementById("recordListChongqing").innerHTML = "";
+            document.getElementById("recordListSanchong").innerHTML = "";
+
             records.forEach(({ store, machine, amount, timeString }) => {
                 const row = document.createElement("tr");
-                row.innerHTML = `<td>${store}</td><td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
-                recordList.appendChild(row);
+                row.innerHTML = `<td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
+
+                if (store === "重慶店") {
+                    document.getElementById("recordListChongqing").appendChild(row);
+                } else if (store === "三重店") {
+                    document.getElementById("recordListSanchong").appendChild(row);
+                }
             });
         }
 
         function clearRecords() {
             localStorage.removeItem("records");
-            document.getElementById("recordList").innerHTML = "";
+            document.getElementById("recordListChongqing").innerHTML = "";
+            document.getElementById("recordListSanchong").innerHTML = "";
         }
 
         function exportToExcel() {
@@ -127,17 +142,12 @@
                 return;
             }
 
-            // 轉換成 Excel 格式
             let wb = XLSX.utils.book_new();
             let ws = XLSX.utils.json_to_sheet(records, { header: ["store", "machine", "amount", "timeString"] });
 
-            // 設定標題
             XLSX.utils.sheet_add_aoa(ws, [["店名", "台號", "金額", "時間"]], { origin: "A1" });
-
-            // 加入工作表
             XLSX.utils.book_append_sheet(wb, ws, "記錄");
 
-            // 下載 Excel 檔案
             XLSX.writeFile(wb, "bookkeeping.xlsx");
         }
 
