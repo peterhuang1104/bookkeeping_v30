@@ -35,9 +35,9 @@
 
     <button onclick="recordTransaction()">記錄</button>
     <button onclick="exportToExcel()">匯出 Excel</button>
-    <button onclick="clearRecords()">清除所有記錄</button>
 
     <h3>重慶店 記錄列表</h3>
+    <button onclick="clearRecords('重慶店')">清除重慶店記錄</button>
     <table>
         <thead>
             <tr>
@@ -50,6 +50,7 @@
     </table>
 
     <h3>三重店 記錄列表</h3>
+    <button onclick="clearRecords('三重店')">清除三重店記錄</button>
     <table>
         <thead>
             <tr>
@@ -65,17 +66,17 @@
         function updateMachineOptions() {
             const store = document.getElementById("store").value;
             const machineSelect = document.getElementById("machine");
-            machineSelect.innerHTML = '<option value="">請選擇台號</option>'; 
+            machineSelect.innerHTML = '<option value="">請選擇台號</option>';
 
             if (store === "重慶店") {
-                for (let i = 1; i <= 27; i += 2) { 
+                for (let i = 1; i <= 27; i += 2) {
                     let option = document.createElement("option");
                     option.value = i;
                     option.textContent = i;
                     machineSelect.appendChild(option);
                 }
             } else if (store === "三重店") {
-                for (let i = 1; i <= 25; i++) { 
+                for (let i = 1; i <= 25; i++) {
                     let option = document.createElement("option");
                     option.value = i;
                     option.textContent = i;
@@ -102,51 +103,54 @@
             const now = new Date();
             const timeString = now.toLocaleString();
 
-            let records = JSON.parse(localStorage.getItem("records")) || [];
-            records.push({ store, machine, amount, timeString });
-            localStorage.setItem("records", JSON.stringify(records));
+            let records = JSON.parse(localStorage.getItem(store)) || [];
+            records.push({ machine, amount, timeString });
+            localStorage.setItem(store, JSON.stringify(records));
 
             document.getElementById("amount").value = "";
             loadRecords();
         }
 
         function loadRecords() {
-            const records = JSON.parse(localStorage.getItem("records")) || [];
+            ["重慶店", "三重店"].forEach(store => {
+                const recordList = document.getElementById(store === "重慶店" ? "recordListChongqing" : "recordListSanchong");
+                recordList.innerHTML = "";
 
-            // 清空表格
-            document.getElementById("recordListChongqing").innerHTML = "";
-            document.getElementById("recordListSanchong").innerHTML = "";
-
-            records.forEach(({ store, machine, amount, timeString }) => {
-                const row = document.createElement("tr");
-                row.innerHTML = `<td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
-
-                if (store === "重慶店") {
-                    document.getElementById("recordListChongqing").appendChild(row);
-                } else if (store === "三重店") {
-                    document.getElementById("recordListSanchong").appendChild(row);
-                }
+                let records = JSON.parse(localStorage.getItem(store)) || [];
+                records.forEach(({ machine, amount, timeString }) => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `<td>${machine}</td><td>${amount}</td><td>${timeString}</td>`;
+                    recordList.appendChild(row);
+                });
             });
         }
 
-        function clearRecords() {
-            localStorage.removeItem("records");
-            document.getElementById("recordListChongqing").innerHTML = "";
-            document.getElementById("recordListSanchong").innerHTML = "";
+        function clearRecords(store) {
+            localStorage.removeItem(store);
+            loadRecords();
         }
 
         function exportToExcel() {
-            let records = JSON.parse(localStorage.getItem("records")) || [];
-            if (records.length === 0) {
+            let chongqingRecords = JSON.parse(localStorage.getItem("重慶店")) || [];
+            let sanchongRecords = JSON.parse(localStorage.getItem("三重店")) || [];
+            if (chongqingRecords.length === 0 && sanchongRecords.length === 0) {
                 alert("沒有記錄可匯出！");
                 return;
             }
 
             let wb = XLSX.utils.book_new();
-            let ws = XLSX.utils.json_to_sheet(records, { header: ["store", "machine", "amount", "timeString"] });
 
-            XLSX.utils.sheet_add_aoa(ws, [["店名", "台號", "金額", "時間"]], { origin: "A1" });
-            XLSX.utils.book_append_sheet(wb, ws, "記錄");
+            if (chongqingRecords.length > 0) {
+                let ws1 = XLSX.utils.json_to_sheet(chongqingRecords, { header: ["machine", "amount", "timeString"] });
+                XLSX.utils.sheet_add_aoa(ws1, [["台號", "金額", "時間"]], { origin: "A1" });
+                XLSX.utils.book_append_sheet(wb, ws1, "重慶店");
+            }
+
+            if (sanchongRecords.length > 0) {
+                let ws2 = XLSX.utils.json_to_sheet(sanchongRecords, { header: ["machine", "amount", "timeString"] });
+                XLSX.utils.sheet_add_aoa(ws2, [["台號", "金額", "時間"]], { origin: "A1" });
+                XLSX.utils.book_append_sheet(wb, ws2, "三重店");
+            }
 
             XLSX.writeFile(wb, "bookkeeping.xlsx");
         }
