@@ -95,6 +95,11 @@
                     option.textContent = i;
                     machineSelect.appendChild(option);
                 }
+                // 新增兌幣機選項
+                let coinMachineOption = document.createElement("option");
+                coinMachineOption.value = "兌幣機";
+                coinMachineOption.textContent = "兌幣機";
+                machineSelect.appendChild(coinMachineOption);
             } else if (store === "三重店") {
                 for (let i = 1; i <= 25; i++) {
                     let option = document.createElement("option");
@@ -108,6 +113,11 @@
                     option.textContent = machine;
                     machineSelect.appendChild(option);
                 });
+                // 新增兌幣機選項
+                let coinMachineOption = document.createElement("option");
+                coinMachineOption.value = "兌幣機";
+                coinMachineOption.textContent = "兌幣機";
+                machineSelect.appendChild(coinMachineOption);
             }
 
             machineSelect.value = firstMachine;
@@ -178,8 +188,10 @@
         }
 
         function clearRecords(store) {
-            localStorage.removeItem(store);
-            loadRecords();
+            if (confirm(`確定要清除 ${store} 的所有紀錄嗎？`)) {
+                localStorage.removeItem(store);
+                loadRecords();
+            }
         }
 
         window.onload = () => {
