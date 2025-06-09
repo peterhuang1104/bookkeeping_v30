@@ -51,15 +51,16 @@
                 <th>日期</th>
                 <th>台號</th>
                 <th>金額</th>
-                <th>備註</th>
                 <th>目前累積金額</th>
+                <th>備註</th>
             </tr>
         </thead>
         <tbody id="recordListChongqing"></tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="4">整間店累積金額</td>
+                <td colspan="3">整間店累積金額</td>
                 <td id="totalChongqing">0</td>
+                <td></td>
             </tr>
         </tfoot>
     </table>
@@ -72,15 +73,16 @@
                 <th>日期</th>
                 <th>台號</th>
                 <th>金額</th>
-                <th>備註</th>
                 <th>目前累積金額</th>
+                <th>備註</th>
             </tr>
         </thead>
         <tbody id="recordListSanchong"></tbody>
         <tfoot>
             <tr class="total-row">
-                <td colspan="4">整間店累積金額</td>
+                <td colspan="3">整間店累積金額</td>
                 <td id="totalSanchong">0</td>
+                <td></td>
             </tr>
         </tfoot>
     </table>
@@ -176,8 +178,8 @@
                         <td>${record.date}</td>
                         <td>${record.machine}</td>
                         <td contenteditable="true" class="editable" onblur="updateAmount('${store}', ${index}, this)">${record.amount}</td>
-                        <td contenteditable="true" class="editable" onblur="updateNote('${store}', ${index}, this)">${record.note || ""}</td>
                         <td>${totalMap[record.machine]}</td>
+                        <td contenteditable="true" class="editable" onblur="updateNote('${store}', ${index}, this)">${record.note || ""}</td>
                     `;
                     recordList.appendChild(row);
                 });
