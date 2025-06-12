@@ -97,6 +97,16 @@
             </tr>
         </thead>
         <tbody id="summaryTableChongqing"></tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td>兌幣機加總</td>
+                <td id="coinTotalChongqing">0</td>
+            </tr>
+            <tr class="total-row">
+                <td>累積金額 (扣除兌幣機)</td>
+                <td id="netTotalChongqing">0</td>
+            </tr>
+        </tfoot>
     </table>
 
     <h3>總表 - 三重店</h3>
@@ -108,6 +118,16 @@
             </tr>
         </thead>
         <tbody id="summaryTableSanchong"></tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td>兌幣機加總</td>
+                <td id="coinTotalSanchong">0</td>
+            </tr>
+            <tr class="total-row">
+                <td>累積金額 (扣除兌幣機)</td>
+                <td id="netTotalSanchong">0</td>
+            </tr>
+        </tfoot>
     </table>
 
     <script>
@@ -178,6 +198,9 @@
 
         function loadRecords() {
             const summaryData = { "重慶店": {}, "三重店": {} };
+            const coinTotals = { "重慶店": 0, "三重店": 0 };
+            const netTotals = { "重慶店": 0, "三重店": 0 };
+
             ["重慶店", "三重店"].forEach(store => {
                 const recordList = document.getElementById(store === "重慶店" ? "recordListChongqing" : "recordListSanchong");
                 const totalField = document.getElementById(store === "重慶店" ? "totalChongqing" : "totalSanchong");
@@ -196,8 +219,10 @@
                     }
                     totalMap[machine] += amount;
 
-                    // 兌幣機不列入整間店累積金額
-                    if (machine !== "兌幣機") {
+                    // 兌幣機金額單獨加總
+                    if (machine === "兌幣機") {
+                        coinTotals[store] += amount;
+                    } else {
                         totalStoreSum += amount;
                     }
 
@@ -213,17 +238,23 @@
                 });
 
                 totalField.textContent = totalStoreSum;
+                netTotals[store] = totalStoreSum;
 
                 // 更新總表數據
                 summaryData[store] = totalMap;
             });
 
-            updateSummaryTable(summaryData);
+            updateSummaryTable(summaryData, coinTotals, netTotals);
         }
 
-        function updateSummaryTable(summaryData) {
+        function updateSummaryTable(summaryData, coinTotals, netTotals) {
             const summaryTableChongqing = document.getElementById("summaryTableChongqing");
             const summaryTableSanchong = document.getElementById("summaryTableSanchong");
+            const coinTotalChongqing = document.getElementById("coinTotalChongqing");
+            const netTotalChongqing = document.getElementById("netTotalChongqing");
+            const coinTotalSanchong = document.getElementById("coinTotalSanchong");
+            const netTotalSanchong = document.getElementById("netTotalSanchong");
+
             summaryTableChongqing.innerHTML = "";
             summaryTableSanchong.innerHTML = "";
 
@@ -267,6 +298,12 @@
                 `;
                 summaryTableSanchong.appendChild(row);
             }
+
+            // 更新兌幣機加總和累積金額
+            coinTotalChongqing.textContent = coinTotals["重慶店"];
+            netTotalChongqing.textContent = netTotals["重慶店"];
+            coinTotalSanchong.textContent = coinTotals["三重店"];
+            netTotalSanchong.textContent = netTotals["三重店"];
         }
 
         function updateAmount(store, index, element) {
