@@ -14,6 +14,7 @@
         th { background-color: #f4f4f4; }
         .editable { cursor: pointer; background-color: #f9f9f9; }
         .total-row { font-weight: bold; background-color: #eef; }
+        .highlight-red { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
@@ -87,6 +88,17 @@
         </tfoot>
     </table>
 
+    <h3>總表</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>台號</th>
+                <th>總金額</th>
+            </tr>
+        </thead>
+        <tbody id="summaryTable"></tbody>
+    </table>
+
     <script>
         function updateMachineOptions() {
             const store = document.getElementById("store").value;
@@ -154,6 +166,7 @@
         }
 
         function loadRecords() {
+            const summaryData = {};
             ["重慶店", "三重店"].forEach(store => {
                 const recordList = document.getElementById(store === "重慶店" ? "recordListChongqing" : "recordListSanchong");
                 const totalField = document.getElementById(store === "重慶店" ? "totalChongqing" : "totalSanchong");
@@ -171,7 +184,11 @@
                         totalMap[machine] = 0;
                     }
                     totalMap[machine] += amount;
-                    totalStoreSum += amount;
+
+                    // 兌幣機不列入整間店累積金額
+                    if (machine !== "兌幣機") {
+                        totalStoreSum += amount;
+                    }
 
                     const row = document.createElement("tr");
                     row.innerHTML = `
@@ -185,7 +202,42 @@
                 });
 
                 totalField.textContent = totalStoreSum;
+
+                // 更新總表數據
+                for (let machine in totalMap) {
+                    if (!summaryData[machine]) {
+                        summaryData[machine] = 0;
+                    }
+                    summaryData[machine] += totalMap[machine];
+                }
             });
+
+            updateSummaryTable(summaryData);
+        }
+
+        function updateSummaryTable(summaryData) {
+            const summaryTable = document.getElementById("summaryTable");
+            summaryTable.innerHTML = "";
+
+            let minAmount = Infinity;
+            let minMachine = null;
+
+            for (let machine in summaryData) {
+                if (summaryData[machine] < minAmount) {
+                    minAmount = summaryData[machine];
+                    minMachine = machine;
+                }
+            }
+
+            for (let machine in summaryData) {
+                const row = document.createElement("tr");
+                row.className = machine === minMachine ? "highlight-red" : "";
+                row.innerHTML = `
+                    <td>${machine}</td>
+                    <td>${summaryData[machine]}</td>
+                `;
+                summaryTable.appendChild(row);
+            }
         }
 
         function updateAmount(store, index, element) {
@@ -218,4 +270,3 @@
 
 </body>
 </html>
-
