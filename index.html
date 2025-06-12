@@ -88,7 +88,7 @@
         </tfoot>
     </table>
 
-    <h3>總表</h3>
+    <h3>總表 - 重慶店</h3>
     <table>
         <thead>
             <tr>
@@ -96,7 +96,18 @@
                 <th>總金額</th>
             </tr>
         </thead>
-        <tbody id="summaryTable"></tbody>
+        <tbody id="summaryTableChongqing"></tbody>
+    </table>
+
+    <h3>總表 - 三重店</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>台號</th>
+                <th>總金額</th>
+            </tr>
+        </thead>
+        <tbody id="summaryTableSanchong"></tbody>
     </table>
 
     <script>
@@ -166,7 +177,7 @@
         }
 
         function loadRecords() {
-            const summaryData = {};
+            const summaryData = { "重慶店": {}, "三重店": {} };
             ["重慶店", "三重店"].forEach(store => {
                 const recordList = document.getElementById(store === "重慶店" ? "recordListChongqing" : "recordListSanchong");
                 const totalField = document.getElementById(store === "重慶店" ? "totalChongqing" : "totalSanchong");
@@ -204,39 +215,57 @@
                 totalField.textContent = totalStoreSum;
 
                 // 更新總表數據
-                for (let machine in totalMap) {
-                    if (!summaryData[machine]) {
-                        summaryData[machine] = 0;
-                    }
-                    summaryData[machine] += totalMap[machine];
-                }
+                summaryData[store] = totalMap;
             });
 
             updateSummaryTable(summaryData);
         }
 
         function updateSummaryTable(summaryData) {
-            const summaryTable = document.getElementById("summaryTable");
-            summaryTable.innerHTML = "";
+            const summaryTableChongqing = document.getElementById("summaryTableChongqing");
+            const summaryTableSanchong = document.getElementById("summaryTableSanchong");
+            summaryTableChongqing.innerHTML = "";
+            summaryTableSanchong.innerHTML = "";
 
-            let minAmount = Infinity;
-            let minMachine = null;
+            let minAmountChongqing = Infinity;
+            let minMachineChongqing = null;
+            let minAmountSanchong = Infinity;
+            let minMachineSanchong = null;
 
-            for (let machine in summaryData) {
-                if (summaryData[machine] < minAmount) {
-                    minAmount = summaryData[machine];
-                    minMachine = machine;
+            // 找出最差的台號
+            for (let machine in summaryData["重慶店"]) {
+                if (summaryData["重慶店"][machine] < minAmountChongqing) {
+                    minAmountChongqing = summaryData["重慶店"][machine];
+                    minMachineChongqing = machine;
+                }
+            }
+            for (let machine in summaryData["三重店"]) {
+                if (summaryData["三重店"][machine] < minAmountSanchong) {
+                    minAmountSanchong = summaryData["三重店"][machine];
+                    minMachineSanchong = machine;
                 }
             }
 
-            for (let machine in summaryData) {
+            // 更新重慶店總表
+            for (let machine in summaryData["重慶店"]) {
                 const row = document.createElement("tr");
-                row.className = machine === minMachine ? "highlight-red" : "";
+                row.className = machine === minMachineChongqing ? "highlight-red" : "";
                 row.innerHTML = `
                     <td>${machine}</td>
-                    <td>${summaryData[machine]}</td>
+                    <td>${summaryData["重慶店"][machine]}</td>
                 `;
-                summaryTable.appendChild(row);
+                summaryTableChongqing.appendChild(row);
+            }
+
+            // 更新三重店總表
+            for (let machine in summaryData["三重店"]) {
+                const row = document.createElement("tr");
+                row.className = machine === minMachineSanchong ? "highlight-red" : "";
+                row.innerHTML = `
+                    <td>${machine}</td>
+                    <td>${summaryData["三重店"][machine]}</td>
+                `;
+                summaryTableSanchong.appendChild(row);
             }
         }
 
